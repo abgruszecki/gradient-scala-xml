@@ -31,11 +31,11 @@ object ContentModel extends WordExp {
   override type _labelT = ElemName
   override type _regexpT = RegExp
 
-  @deprecated("Avoidance", since="2.10")
-  trait Translator extends WordBerrySethi
-  object Translator extends Translator {
-    override val lang: ContentModel.this.type = ContentModel.this
-  }
+  /*GRADIENT*/// @deprecated("Avoidance", since="2.10")
+  /*GRADIENT*/// trait Translator extends WordBerrySethi
+  /*GRADIENT*/// object Translator extends Translator {
+  /*GRADIENT*///   override val lang: ContentModel.this.type = ContentModel.this
+  /*GRADIENT*/// }
 
   case class ElemName(name: String) extends Label {
     override def toString: String = s"""ElemName("$name")"""
@@ -105,13 +105,14 @@ case object ANY extends ContentModel {
   override def buildString(sb: StringBuilder): StringBuilder = sb.append("ANY")
 }
 sealed abstract class DFAContentModel extends ContentModel {
-  import ContentModel.{ElemName, Translator}
+  /*GRADIENT*///import ContentModel.{ElemName, Translator}
+  /*GRADIENT*/  import ContentModel.ElemName
   def r: RegExp
 
-  lazy val dfa: DetWordAutom[ElemName] = {
-    val nfa: NondetWordAutom[ElemName] = Translator.automatonFrom(r, 1)
-    new SubsetConstruction(nfa).determinize
-  }
+  /*GRADIENT*///lazy val dfa: DetWordAutom[ElemName] = {
+  /*GRADIENT*///  val nfa: NondetWordAutom[ElemName] = Translator.automatonFrom(r, 1)
+  /*GRADIENT*///  new SubsetConstruction(nfa).determinize
+  /*GRADIENT*///}
 }
 
 case class MIXED(override val r: RegExp) extends DFAContentModel {

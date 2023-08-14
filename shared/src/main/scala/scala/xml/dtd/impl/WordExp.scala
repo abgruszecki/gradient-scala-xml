@@ -50,11 +50,11 @@ private[dtd] abstract class WordExp extends Base {
 
   case class Letter(a: _labelT) extends RegExp {
     final override lazy val isNullable: Boolean = false
-    var pos: Int = -1
+    /*GRADIENT*///var pos: Int = -1
   }
 
   case class Wildcard() extends RegExp {
     final override lazy val isNullable: Boolean = false
-    var pos: Int = -1
+    /*GRADIENT*///var pos: Int = -1
   }
 }
