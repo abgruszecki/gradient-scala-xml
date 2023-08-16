@@ -22,15 +22,15 @@ import scala.collection.Seq
  *
  *  @author Burak Emir
  */
-abstract class DTD {
+abstract class DTD(/*GRADIENT*/reg: Reg^) {
   var externalID: ExternalID = _
   var decls: List[Decl] = Nil
   def notations: Seq[NotationDecl] = Nil
   def unparsedEntities: Seq[EntityDecl] = Nil
 
-  var elem: mutable.Map[String, ElemDecl] = new mutable.HashMap[String, ElemDecl]()
-  var attr: mutable.Map[String, AttListDecl] = new mutable.HashMap[String, AttListDecl]()
-  var ent: mutable.Map[String, EntityDecl] = new mutable.HashMap[String, EntityDecl]()
+  var elem: mutable.Map[String, ElemDecl]^{reg} = reg.new mutable.HashMap[String, ElemDecl]()
+  var attr: mutable.Map[String, AttListDecl]^{reg} = reg.new mutable.HashMap[String, AttListDecl]()
+  var ent: mutable.Map[String, EntityDecl]^{reg} = reg.new mutable.HashMap[String, EntityDecl]()
 
   override def toString: String =
     s"DTD ${Option(externalID).getOrElse("")} [\n${decls.mkString("\n")}\n]"

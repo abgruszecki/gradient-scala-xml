@@ -21,7 +21,7 @@ import factory.NodeFactory
  * nobinding adaptor providing callbacks to parser to create elements.
  *   implements hash-consing
  */
-class NoBindingFactoryAdapter extends FactoryAdapter with NodeFactory[Elem] {
+class NoBindingFactoryAdapter(/*GRADIENT*/reg: Reg^) extends FactoryAdapter with NodeFactory[Elem](reg) {
   /** True.  Every XML node may contain text that the application needs */
   override def nodeContainsText(label: String): Boolean = true
 

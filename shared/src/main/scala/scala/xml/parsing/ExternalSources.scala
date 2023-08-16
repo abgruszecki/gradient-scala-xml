@@ -24,16 +24,17 @@ import scala.io.Source
  */
 trait ExternalSources {
   self: ExternalSources with MarkupParser with MarkupHandler =>
+  /*GRADIENT*/ capt {fs,net}
 
-  def externalSource(systemId: String): Source = {
+  def externalSource(systemId: String): Source^{fs,net} = {
     if (systemId.startsWith("http:"))
-      return Source.fromURL(new URL(systemId))
+      return Source.fromURL(new URL(systemId)(/*GRADIENT*/fs, net))
 
     val fileStr: String = input.descr match {
       case x if x.startsWith("file:") => x.drop(5)
       case x                          => x.take(x.lastIndexOf(separator) + 1)
     }
 
-    Source.fromFile(s"$fileStr$systemId")
+    Source.fromFile(s"$fileStr$systemId")(/*GRADIENT*/fs)
   }
 }

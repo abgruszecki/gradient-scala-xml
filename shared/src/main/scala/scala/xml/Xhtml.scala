@@ -45,13 +45,13 @@ object Xhtml {
   def toXhtml(
     x: Node,
     pscope: NamespaceBinding = TopScope,
-    sb: StringBuilder = new StringBuilder,
+    sb: StringBuilder^ = { /*GRADIENT*/ val local = new Region(); local.new StringBuilder },
     stripComments: Boolean = false,
     decodeEntities: Boolean = false,
     preserveWhitespace: Boolean = false,
     minimizeTags: Boolean = true
   ): Unit = {
-    def decode(er: EntityRef): StringBuilder = XhtmlEntities.entMap.get(er.entityName) match {
+    def decode(er: EntityRef): StringBuilder^{sb} = XhtmlEntities.entMap.get(er.entityName) match {
       case Some(chr) if chr.toInt >= 128 => sb.append(chr)
       case _                             => er.buildString(sb)
     }
@@ -90,7 +90,7 @@ object Xhtml {
   def sequenceToXML(
     children: Seq[Node],
     pscope: NamespaceBinding = TopScope,
-    sb: StringBuilder = new StringBuilder,
+    sb: StringBuilder^ = { /*GRADIENT*/ val local = new Region(); local.new StringBuilder },
     stripComments: Boolean = false,
     decodeEntities: Boolean = false,
     preserveWhitespace: Boolean = false,

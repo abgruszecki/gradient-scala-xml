@@ -37,7 +37,7 @@ object NodeSeq {
   implicit def canBuildFrom: CBF[Coll, Node, NodeSeq] = ScalaVersionSpecific.NodeSeqCBF
   // ---
 
-  def newBuilder: mutable.Builder[Node, NodeSeq] = new mutable.ListBuffer[Node].mapResult(fromSeq)
+  def newBuilder(/*GRADIENT*/reg: Reg^): mutable.Builder[Node, NodeSeq]^{reg} = reg.new mutable.ListBuffer[Node].mapResult(fromSeq)
   implicit def seqToNodeSeq(s: Seq[Node]): NodeSeq = fromSeq(s)
 }
 
@@ -50,14 +50,15 @@ object NodeSeq {
 abstract class NodeSeq extends AbstractSeq[Node] with immutable.Seq[Node] with ScalaVersionSpecificNodeSeq with Equality with Serializable {
   def theSeq: Seq[Node]
   override def length: Int = theSeq.length
-  override def iterator: Iterator[Node] = theSeq.iterator
+  override def iterator(/*GRADIENT*/reg: Reg^): Iterator[Node] = theSeq.iterator(reg)
 
   override def apply(i: Int): Node = theSeq(i)
   def apply(f: Node => Boolean): NodeSeq = filter(f)
 
   def xml_sameElements[A](that: Iterable[A]): Boolean = {
-    val these: Iterator[Node] = this.iterator
-    val those: Iterator[A] = that.iterator
+    /*GRADIENT*/ val local = new Region()
+    val these: Iterator[Node]^{local} = this.iterator(local)
+    val those: Iterator[A]^{local} = that.iterator(local)
     while (these.hasNext && those.hasNext)
       if (these.next().xml_!=(those.next()))
         return false

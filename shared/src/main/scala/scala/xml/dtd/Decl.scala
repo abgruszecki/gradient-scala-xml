@@ -31,7 +31,7 @@ sealed abstract class Decl
 
 sealed abstract class MarkupDecl extends Decl {
   override def toString: String = sbToString(buildString)
-  def buildString(sb: StringBuilder): StringBuilder
+  def buildString(sb: StringBuilder^): StringBuilder^{sb}
 }
 
 /**
@@ -39,7 +39,7 @@ sealed abstract class MarkupDecl extends Decl {
  */
 case class ElemDecl(name: String, contentModel: ContentModel)
   extends MarkupDecl {
-  override def buildString(sb: StringBuilder): StringBuilder = {
+  override def buildString(sb: StringBuilder^): StringBuilder^{sb} = {
     sb.append(s"<!ELEMENT $name ")
     ContentModel.buildString(contentModel, sb)
     sb.append('>')
@@ -48,7 +48,7 @@ case class ElemDecl(name: String, contentModel: ContentModel)
 
 case class AttListDecl(name: String, attrs: List[AttrDecl])
   extends MarkupDecl {
-  override def buildString(sb: StringBuilder): StringBuilder =
+  override def buildString(sb: StringBuilder^): StringBuilder^{sb} =
     sb.append(s"<!ATTLIST $name\n${attrs.mkString("\n")}>")
 }
 
@@ -60,7 +60,7 @@ case class AttListDecl(name: String, attrs: List[AttrDecl])
 case class AttrDecl(name: String, tpe: String, default: DefaultDecl) {
   override def toString: String = sbToString(buildString)
 
-  def buildString(sb: StringBuilder): StringBuilder = {
+  def buildString(sb: StringBuilder^): StringBuilder^{sb} = {
     sb.append(s"  $name $tpe ")
     default.buildString(sb)
   }
@@ -71,7 +71,7 @@ sealed abstract class EntityDecl extends MarkupDecl
 
 /** a parsed general entity declaration */
 case class ParsedEntityDecl(name: String, entdef: EntityDef) extends EntityDecl {
-  override def buildString(sb: StringBuilder): StringBuilder = {
+  override def buildString(sb: StringBuilder^): StringBuilder^{sb} = {
     sb.append(s"<!ENTITY $name ")
     entdef.buildString(sb).append('>')
   }
@@ -79,7 +79,7 @@ case class ParsedEntityDecl(name: String, entdef: EntityDef) extends EntityDecl 
 
 /** a parameter entity declaration */
 case class ParameterEntityDecl(name: String, entdef: EntityDef) extends EntityDecl {
-  override def buildString(sb: StringBuilder): StringBuilder = {
+  override def buildString(sb: StringBuilder^): StringBuilder^{sb} = {
     sb.append(s"<!ENTITY % $name ")
     entdef.buildString(sb).append('>')
   }
@@ -87,7 +87,7 @@ case class ParameterEntityDecl(name: String, entdef: EntityDef) extends EntityDe
 
 /** an unparsed entity declaration */
 case class UnparsedEntityDecl(name: String, extID: ExternalID, notation: String) extends EntityDecl {
-  override def buildString(sb: StringBuilder): StringBuilder = {
+  override def buildString(sb: StringBuilder^): StringBuilder^{sb} = {
     sb.append(s"<!ENTITY $name ")
     extID.buildString(sb).append(s" NDATA $notation>")
   }
@@ -95,14 +95,14 @@ case class UnparsedEntityDecl(name: String, extID: ExternalID, notation: String)
 
 /** a notation declaration */
 case class NotationDecl(name: String, extID: ExternalID) extends MarkupDecl {
-  override def buildString(sb: StringBuilder): StringBuilder = {
+  override def buildString(sb: StringBuilder^): StringBuilder^{sb} = {
     sb.append(s"<!NOTATION $name ")
     extID.buildString(sb).append('>')
   }
 }
 
 sealed abstract class EntityDef {
-  def buildString(sb: StringBuilder): StringBuilder
+  def buildString(sb: StringBuilder^): StringBuilder^{sb}
 }
 
 case class IntDef(value: String) extends EntityDef {
@@ -126,13 +126,13 @@ case class IntDef(value: String) extends EntityDef {
   }
   validateValue()
 
-  override def buildString(sb: StringBuilder): StringBuilder =
+  override def buildString(sb: StringBuilder^): StringBuilder^{sb} =
     Utility.appendQuoted(value, sb)
 
 }
 
 case class ExtDef(extID: ExternalID) extends EntityDef {
-  override def buildString(sb: StringBuilder): StringBuilder =
+  override def buildString(sb: StringBuilder^): StringBuilder^{sb} =
     extID.buildString(sb)
 }
 
@@ -141,7 +141,7 @@ case class PEReference(ent: String) extends MarkupDecl {
   if (!Utility.isName(ent))
     throw new IllegalArgumentException("ent must be an XML Name")
 
-  override def buildString(sb: StringBuilder): StringBuilder =
+  override def buildString(sb: StringBuilder^): StringBuilder^{sb} =
     sb.append(s"%$ent;")
 }
 
@@ -149,22 +149,22 @@ case class PEReference(ent: String) extends MarkupDecl {
 
 sealed abstract class DefaultDecl {
   def toString: String
-  def buildString(sb: StringBuilder): StringBuilder
+  def buildString(sb: StringBuilder^): StringBuilder^{sb}
 }
 
 case object REQUIRED extends DefaultDecl {
   override def toString: String = "#REQUIRED"
-  override def buildString(sb: StringBuilder): StringBuilder = sb.append("#REQUIRED")
+  override def buildString(sb: StringBuilder^): StringBuilder^{sb} = sb.append("#REQUIRED")
 }
 
 case object IMPLIED extends DefaultDecl {
   override def toString: String = "#IMPLIED"
-  override def buildString(sb: StringBuilder): StringBuilder = sb.append("#IMPLIED")
+  override def buildString(sb: StringBuilder^): StringBuilder^{sb} = sb.append("#IMPLIED")
 }
 
 case class DEFAULT(fixed: Boolean, attValue: String) extends DefaultDecl {
   override def toString: String = sbToString(buildString)
-  override def buildString(sb: StringBuilder): StringBuilder = {
+  override def buildString(sb: StringBuilder^): StringBuilder^{sb} = {
     if (fixed) sb.append("#FIXED ")
     Utility.appendEscapedQuoted(attValue, sb)
   }

@@ -46,5 +46,5 @@ final case class Group(nodes: Seq[Node]) extends Node {
   override def attributes: Nothing = fail("attributes")
   override def namespace: Nothing = fail("namespace")
   override def child: ScalaVersionSpecificReturnTypes.GroupChild = fail("child")
-  def buildString(sb: StringBuilder): Nothing = fail("toString(StringBuilder)")
+  def buildString(sb: StringBuilder^): Nothing = fail("toString(StringBuilder)")
 }

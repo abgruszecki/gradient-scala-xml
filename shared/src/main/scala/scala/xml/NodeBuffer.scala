@@ -36,13 +36,13 @@ class NodeBuffer extends scala.collection.mutable.ArrayBuffer[Node] with ScalaVe
    * @param o converts to an xml node and adds to this node buffer
    * @return  this nodebuffer
    */
-  def &+(o: Any): NodeBuffer = {
+  def &+(o: Any^): NodeBuffer^{this} = {
     o match {
       case null | _: Unit | Text("") => // ignore
       case it: Iterator[_]           => it.foreach(&+)
       case n: Node                   => super.+=(n)
-      case ns: Iterable[_]           => this &+ ns.iterator
-      case ns: Array[_]              => this &+ ns.iterator
+      case ns: Iterable[_]           => this &+ ns.iterator(/*GRADIENT*/new Region())
+      case ns: Array[_]              => this &+ ns.iterator(/*GRADIENT*/new Region())
       case d                         => super.+=(new Atom(d))
     }
     this

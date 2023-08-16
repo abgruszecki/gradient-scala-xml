@@ -19,7 +19,7 @@ package parsing
  *
  *  @author  Burak Emir
  */
-abstract class ConstructingHandler extends MarkupHandler {
+abstract class ConstructingHandler(/*GRADIENT*/reg: Reg^) extends MarkupHandler(reg) {
   val preserveWS: Boolean
 
   override def elem(pos: Int, pre: String, label: String, attrs: MetaData,

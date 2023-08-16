@@ -27,7 +27,7 @@ class Unparsed(data: String) extends Atom[String](data) {
    * Returns text, with some characters escaped according to XML
    *  specification.
    */
-  override def buildString(sb: StringBuilder): StringBuilder =
+  override def buildString(sb: StringBuilder^): StringBuilder^{sb} =
     sb.append(data)
 }
 

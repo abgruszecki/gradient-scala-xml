@@ -21,7 +21,7 @@ import scala.collection.Seq
  *
  *  @author  Burak Emir
  */
-abstract class BasicTransformer extends (Node => Node) {
+abstract class BasicTransformer extends (Node /*GRADIENT*/-> Node) {
   protected def unchanged(n: Node, ns: Seq[Node]): Boolean =
     ns.length == 1 && (ns.head == n)
 
@@ -29,7 +29,7 @@ abstract class BasicTransformer extends (Node => Node) {
    * Call transform(Node) for each node in ns, append results
    *  to NodeBuffer.
    */
-  def transform(it: Iterator[Node], nb: NodeBuffer): Seq[Node] =
+  def transform(it: Iterator[Node]^, nb: NodeBuffer^): Seq[Node]^{nb} =
     it.foldLeft(nb)(_ ++= transform(_))
 
   /**

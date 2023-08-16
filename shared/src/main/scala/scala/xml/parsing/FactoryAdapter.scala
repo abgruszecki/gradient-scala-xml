@@ -21,11 +21,11 @@ import org.xml.sax.ext.{DefaultHandler2, Locator2}
 // can be mixed into FactoryAdapter if desired
 trait ConsoleErrorHandler extends DefaultHandler2 {
   // ignore warning, crimson warns even for entity resolution!
-  override def warning(ex: SAXParseException): Unit = ()
-  override def error(ex: SAXParseException): Unit = printError("Error", ex)
-  override def fatalError(ex: SAXParseException): Unit = printError("Fatal Error", ex)
+  override def warning(ex: SAXParseException^#): Unit = ()
+  override def error(ex: SAXParseException^#): Unit = printError("Error", ex)
+  override def fatalError(ex: SAXParseException^#): Unit = printError("Fatal Error", ex)
 
-  protected def printError(errtype: String, ex: SAXParseException): Unit =
+  protected def printError(errtype: String, ex: SAXParseException^#): Unit =
     Console.withOut(Console.err) {
       Console.println(s"[$errtype]:${ex.getLineNumber}:${ex.getColumnNumber}: ${ex.getMessage}")
       Console.flush()
@@ -37,18 +37,18 @@ trait ConsoleErrorHandler extends DefaultHandler2 {
  *  namespace bindings, without relying on namespace handling of the
  *  underlying SAX parser (but processing the parser's namespace-related events if it is namespace-aware).
  */
-abstract class FactoryAdapter extends DefaultHandler2 with factory.XMLLoader[Node] {
+abstract class FactoryAdapter(/*GRADIENT*/reg: Reg^) extends DefaultHandler2 with factory.XMLLoader[Node](reg) { self =>
   val normalizeWhitespace: Boolean = false
 
   // reference to the XMLReader that parses the document; this is used to query
   // features (e.g., 'is-standalone') and properties (e.g., document-xml-version) -
   // see http://www.saxproject.org/apidoc/org/xml/sax/package-summary.html
-  private var xmlReader: Option[XMLReader] = None
+  private var xmlReader: Option[XMLReader^#] = None
 
-  private var dtdBuilder: Option[DtdBuilder] = None
+  private var dtdBuilder: Option[DtdBuilder^{reg} { val reg: self.reg.type }] = None
   private def inDtd: Boolean = dtdBuilder.isDefined && !dtdBuilder.get.isDone
 
-  private var document: Option[Document] = None
+  private var document: Option[Document^{reg} { val reg: self.reg.type }] = None
   private var baseURI: Option[String] = None
   private var xmlEncoding: Option[String] = None
 
@@ -59,7 +59,7 @@ abstract class FactoryAdapter extends DefaultHandler2 with factory.XMLLoader[Nod
   var rootElem: Node = _
   var epilogue: List[Node] = List.empty
 
-  val buffer: StringBuilder = new StringBuilder()
+  val buffer: StringBuilder^{reg} = reg.new StringBuilder()
   private var inCDATA: Boolean = false
 
   /** List of attributes
@@ -111,7 +111,7 @@ abstract class FactoryAdapter extends DefaultHandler2 with factory.XMLLoader[Nod
   /**
    * Load XML document from the inputSource using the xmlReader.
    */
-  def loadDocument(inputSource: InputSource, xmlReader: XMLReader): Document = {
+  def loadDocument(inputSource: InputSource^#, xmlReader: XMLReader^#): Document^{reg} { val reg: self.reg.type } = {
     if (inputSource == null) throw new IllegalArgumentException("InputSource cannot be null")
 
     xmlReader.setContentHandler(this)
@@ -191,7 +191,7 @@ abstract class FactoryAdapter extends DefaultHandler2 with factory.XMLLoader[Nod
   //   def declaration(version: String, encoding: String, standalone: String): Unit = ()
   // but it'll be years until we are all on Java 14 *and* Xerces starts calling this method...
 
-  override def setDocumentLocator(locator: Locator): Unit = {
+  override def setDocumentLocator(locator: Locator^#): Unit = {
     baseURI = Option(locator.getSystemId)
     locator match {
       case locator2: Locator2 =>
@@ -212,7 +212,7 @@ abstract class FactoryAdapter extends DefaultHandler2 with factory.XMLLoader[Nod
     // capture the epilogue at the end of the document
     epilogue = hStack.init.reverse
 
-    val document = new Document
+    val document = reg.new Document
     this.document = Some(document)
     document.children = prolog ++ rootElem ++ epilogue
     document.docElem = rootElem
@@ -355,13 +355,14 @@ abstract class FactoryAdapter extends DefaultHandler2 with factory.XMLLoader[Nod
    * @param offset
    * @param length
    */
-  override def characters(ch: Array[Char], offset: Int, length: Int): Unit = {
+  override def characters(ch: Array[Char]^, offset: Int, length: Int): Unit = {
     if (!capture) ()
     // compliant: report every character
     else if (!normalizeWhitespace) buffer.appendAll(ch, offset, length)
     // normalizing whitespace is not compliant, but useful
     else {
-      var it: Iterator[Char] = ch.slice(offset, offset + length).iterator
+      /*GRADIENT*/ val local = new Region()
+      var it: Iterator[Char]^{local} = ch.slice(offset, offset + length).iterator(local)
       while (it.hasNext) {
         val c: Char = it.next()
         val isSpace: Boolean = c.isWhitespace
@@ -372,7 +373,7 @@ abstract class FactoryAdapter extends DefaultHandler2 with factory.XMLLoader[Nod
     }
   }
 
-  override def ignorableWhitespace(ch: Array[Char], offset: Int, length: Int): Unit = ()
+  override def ignorableWhitespace(ch: Array[Char]^, offset: Int, length: Int): Unit = ()
 
   /**
    * Processing instruction.
@@ -392,6 +393,7 @@ abstract class FactoryAdapter extends DefaultHandler2 with factory.XMLLoader[Nod
     publicId: String,
     systemId: String
   ): Unit = dtdBuilder = Some(DtdBuilder(
+    /*GRADIENT*/reg,
     name,
     publicId,
     systemId
@@ -418,7 +420,7 @@ abstract class FactoryAdapter extends DefaultHandler2 with factory.XMLLoader[Nod
   /**
    * Comment.
    */
-  override def comment(ch: Array[Char], start: Int, length: Int): Unit = {
+  override def comment(ch: Array[Char]^, start: Int, length: Int): Unit = {
     val commentText: String = String.valueOf(ch.slice(start, start + length))
     if (inDtd) dtdBuilder.foreach(_.comment(commentText)) else {
       captureText()

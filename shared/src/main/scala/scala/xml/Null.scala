@@ -25,7 +25,7 @@ import scala.collection.Seq
  */
 // Note: used by the Scala compiler.
 case object Null extends MetaData {
-  override def iterator: Iterator[Nothing] = Iterator.empty
+  override def iterator(/*GRADIENT*/reg: Reg^): Iterator[Nothing] = Iterator.empty
   override def size: Int = 0
   override def append(m: MetaData, scope: NamespaceBinding = TopScope): MetaData = m
   override def filter(f: MetaData => Boolean): ScalaVersionSpecificReturnTypes.NullFilter = this
@@ -53,12 +53,12 @@ case object Null extends MetaData {
     if (Utility.isNameStart(key.head)) null
     else throw new IllegalArgumentException(s"not a valid attribute name '$key', so can never match !")
 
-  override protected def toString1(sb: StringBuilder): Unit = ()
+  override protected def toString1(sb: StringBuilder^): Unit = ()
   override protected def toString1: String = ""
 
   override def toString: String = ""
 
-  override def buildString(sb: StringBuilder): StringBuilder = sb
+  override def buildString(sb: StringBuilder^): StringBuilder^{sb} = sb
 
   override def wellformed(scope: NamespaceBinding): Boolean = true
 

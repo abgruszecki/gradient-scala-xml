@@ -31,5 +31,5 @@ abstract class SpecialNode extends Node {
   final override def child: ScalaVersionSpecificReturnTypes.SpecialNodeChild = Nil
 
   /** Append string representation to the given string buffer argument. */
-  def buildString(sb: StringBuilder): StringBuilder
+  def buildString(sb: StringBuilder^): StringBuilder^{sb}
 }

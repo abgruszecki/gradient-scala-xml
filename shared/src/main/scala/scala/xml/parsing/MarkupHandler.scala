@@ -26,13 +26,13 @@ import scala.xml.dtd._
  *  @todo can we ignore more entity declarations (i.e. those with extIDs)?
  *  @todo expanding entity references
  */
-abstract class MarkupHandler {
+abstract class MarkupHandler(/*GRADIENT*/reg: Reg^) {
 
   /** returns true is this markup handler is validating */
   val isValidating: Boolean = false
 
   var decls: List[Decl] = Nil
-  var ent: mutable.Map[String, EntityDecl] = new mutable.HashMap[String, EntityDecl]()
+  var ent: mutable.Map[String, EntityDecl]^{reg} = reg.new mutable.HashMap[String, EntityDecl]()
 
   def lookupElemDecl(Label: String): ElemDecl =
     (for (case z@ElemDecl(Label, _) <- decls) yield z).headOption.orNull

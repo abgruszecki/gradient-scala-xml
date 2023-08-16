@@ -24,7 +24,7 @@ import scala.collection.Seq
  *  @author  Burak Emir
  */
 @SerialVersionUID(-2289320563321795109L)
-class Document extends NodeSeq with Serializable {
+class Document(/*GRADIENT*/reg: Reg^) extends NodeSeq with Serializable { self =>
 
   /**
    * An ordered list of child information items, in document
@@ -42,7 +42,7 @@ class Document extends NodeSeq with Serializable {
   var docElem: Node = _
 
   /** The dtd that comes with the document, if any */
-  var dtd: scala.xml.dtd.DTD = _
+  var dtd: scala.xml.dtd.DTD^{reg} { val reg: self.reg.type } = _
 
   /**
    * An unordered set of notation information items, one for each notation

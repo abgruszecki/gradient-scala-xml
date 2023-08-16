@@ -17,7 +17,7 @@ import scala.collection.Seq
 import Utility.isSpace
 
 object TextBuffer {
-  def fromString(str: String): TextBuffer = new TextBuffer().append(str)
+  def fromString(/*GRADIENT*/reg: Reg^)(str: String): TextBuffer^{reg} = reg.new TextBuffer(reg).append(str)
 }
 
 /**
@@ -26,8 +26,8 @@ object TextBuffer {
  *  appended with the `append` method will be replaced by a single space
  *  character, and leading and trailing space will be removed completely.
  */
-class TextBuffer {
-  val sb: StringBuilder = new StringBuilder()
+class TextBuffer(/*GRADIENT*/reg: Reg^) {
+  val sb: StringBuilder^{reg} = reg.new StringBuilder()
 
   /**
    * Appends this string to the text buffer, trimming whitespaces as needed.

@@ -30,8 +30,9 @@ import Utility.Escapes.{ pairs => unescape }
  *
  * @author  Burak Emir
  */
-trait MarkupParser extends MarkupParserCommon with TokenTests {
+trait MarkupParser(/*GRADIENT*/reg: Reg^) extends MarkupParserCommon(reg) with TokenTests {
   self: MarkupParser with MarkupHandler =>
+  /*GRADIENT*/ capt {fs,net}
 
   override type PositionType = Int
   override type InputType = Source
@@ -44,39 +45,39 @@ trait MarkupParser extends MarkupParserCommon with TokenTests {
 
   override def xHandleError(that: Char, msg: String): Unit = reportSyntaxError(msg)
 
-  val input: Source
+  val input: Source^
 
   /** if true, does not remove surplus whitespace */
   val preserveWS: Boolean
 
-  def externalSource(systemLiteral: String): Source
+  def externalSource(systemLiteral: String): Source^{fs,net}
 
   //
   // variables, values
   //
 
-  protected var curInput: Source = input
+  protected var curInput: Source^{reg,fs,net} = input
 
   // See ticket #3720 for motivations.
   // As for why it's `private[parsing]` rather than merely `private`, see
   // https://github.com/scala/scala-xml/issues/541 ; the broader access is necessary,
   // for now anyway, to work around https://github.com/lampepfl/dotty/issues/13096
-  private[parsing] class WithLookAhead(underlying: Source) extends Source {
-    private val queue: scala.collection.mutable.Queue[Char] = scala.collection.mutable.Queue[Char]()
-    def lookahead(): BufferedIterator[Char] = {
-      val iter: Iterator[Char] = queue.iterator ++ new Iterator[Char] {
+  private[parsing] class WithLookAhead(underlying: Source^) extends Source {
+    private val queue: scala.collection.mutable.Queue[Char] = scala.collection.mutable.Queue[Char](reg)
+    def lookahead(): BufferedIterator[Char]^{reg,underlying} = {
+      val iter: Iterator[Char]^{reg, underlying} = queue.iterator(reg) ++ reg.new Iterator[Char] {
         override def hasNext: Boolean = underlying.hasNext
         override def next(): Char = { val x: Char = underlying.next(); queue += x; x }
       }
       iter.buffered
     }
-    override val iter: Iterator[Char] = new Iterator[Char] {
+    override val iter: Iterator[Char]^{reg,underlying} = reg.new Iterator[Char] {
       override def hasNext: Boolean = underlying.hasNext || queue.nonEmpty
       override def next(): Char = if (queue.nonEmpty) queue.dequeue() else underlying.next()
     }
   }
 
-  override def lookahead(): BufferedIterator[Char] = curInput match {
+  override def lookahead(): BufferedIterator[Char]^{reg,net,fs} = curInput match {
     case curInputWLA: WithLookAhead =>
       curInputWLA.lookahead()
     case _ =>
@@ -86,10 +87,10 @@ trait MarkupParser extends MarkupParserCommon with TokenTests {
   }
 
   /** the handler of the markup, returns this */
-  private val handle: MarkupHandler = this
+  private val handle: MarkupHandler^{this} = this
 
   /** stack of inputs */
-  var inpStack: List[Source] = Nil
+  var inpStack: List[Source^{reg,net,fs}] = Nil
 
   /** holds the position in the source file */
   var pos: Int = _
@@ -107,7 +108,7 @@ trait MarkupParser extends MarkupParserCommon with TokenTests {
   var nextChNeeded: Boolean = false
   var reachedEof: Boolean = false
   var lastChRead: Char = _
-  override def ch: Char = {
+  override def ch^{reg,net,fs}: Char = {
     if (nextChNeeded) {
       if (curInput.hasNext) {
         lastChRead = curInput.next()
@@ -129,13 +130,13 @@ trait MarkupParser extends MarkupParserCommon with TokenTests {
   }
 
   /** character buffer, for names */
-  protected val cbuf: StringBuilder = new StringBuilder()
+  protected val cbuf: StringBuilder^{reg} = reg.new StringBuilder()
 
-  var dtd: DTD = _
+  var dtd: DTD^{reg} { val reg: self.reg.type } = _
 
-  protected var doc: Document = _
+  protected var doc: Document^{reg} { val reg: self.reg.type } = _
 
-  override def eof: Boolean = { ch; reachedEof }
+  override def eof^{reg,net,fs}: Boolean = { ch; reachedEof }
 
   //
   // methods
@@ -231,8 +232,8 @@ trait MarkupParser extends MarkupParserCommon with TokenTests {
    *  [27]     Misc        ::= Comment | PI | S
    * }}}
    */
-  def document(): Document = {
-    doc = new Document()
+  def document(): Document^{reg} { val reg: self.reg.type } = {
+    doc = reg.new Document()
 
     this.dtd = null
     var info_prolog: (Option[String], Option[String], Option[Boolean]) = (None, None, None)
@@ -252,7 +253,7 @@ trait MarkupParser extends MarkupParserCommon with TokenTests {
 
       children = content(TopScope) // DTD handled as side effect
     } else {
-      val ts: NodeBuffer = new NodeBuffer()
+      val ts: NodeBuffer^{reg} = reg.new NodeBuffer()
       content1(TopScope, ts) // DTD handled as side effect
       ts &+ content(TopScope)
       children = NodeSeq.fromSeq(ts)
@@ -283,7 +284,7 @@ trait MarkupParser extends MarkupParserCommon with TokenTests {
   }
 
   /** append Unicode character to name buffer*/
-  protected def putChar(c: Char): StringBuilder = cbuf.append(c)
+  protected def putChar(c: Char): StringBuilder^{reg} = cbuf.append(c)
 
   /**
    * As the current code requires you to call nextch once manually
@@ -294,7 +295,7 @@ trait MarkupParser extends MarkupParserCommon with TokenTests {
     this
   }
 
-  override protected def ch_returning_nextch: Char = { val res: Char = ch; nextch(); res }
+  override protected def ch_returning_nextch^{reg,net,fs}: Char = { val res: Char = ch; nextch(); res }
 
   override def mkAttributes(name: String, pscope: NamespaceBinding): AttributesType =
     if (isNameStart (ch)) xAttributes(pscope)
@@ -395,8 +396,9 @@ trait MarkupParser extends MarkupParserCommon with TokenTests {
    * see [15]
    *  }}}
    */
-  def xComment: NodeSeq = {
-    val sb: StringBuilder = new StringBuilder()
+  def xComment^{reg,net,fs}: NodeSeq = {
+    /*GRADIENT*/ val local = new Region()
+    val sb: StringBuilder^{local} = local.new StringBuilder()
     xToken("--")
     while (!eof) {
       if (ch == '-' && { sb.append(ch); nextch(); ch == '-' }) {
@@ -411,13 +413,15 @@ trait MarkupParser extends MarkupParserCommon with TokenTests {
   }
 
   /* todo: move this into the NodeBuilder class */
-  def appendText(pos: Int, ts: NodeBuffer, txt: String): Unit = {
+  def appendText(pos: Int, ts: NodeBuffer^, txt: String): Unit = {
     if (preserveWS)
       ts &+ handle.text(pos, txt)
-    else
-      for (t <- TextBuffer.fromString(txt).toText) {
+    else {
+      /*GRADIENT*/ val local = new Region()
+      for (t <- TextBuffer.fromString(local)(txt).toText) {
         ts &+ handle.text(pos, t.text)
       }
+    }
   }
 
   /**
@@ -425,7 +429,7 @@ trait MarkupParser extends MarkupParserCommon with TokenTests {
    *  '<' content1 ::=  ...
    *  }}}
    */
-  def content1(pscope: NamespaceBinding, ts: NodeBuffer): Unit = {
+  def content1(pscope: NamespaceBinding, ts: NodeBuffer^): Unit = {
     ch match {
       case '!' =>
         nextch()
@@ -449,7 +453,7 @@ trait MarkupParser extends MarkupParserCommon with TokenTests {
    *  }}}
    */
   def content(pscope: NamespaceBinding): NodeSeq = {
-    val ts: NodeBuffer = new NodeBuffer
+    val ts: NodeBuffer^{reg} = reg.new NodeBuffer
     var exit: Boolean = eof
     // todo: optimize seq repr.
     def done: NodeSeq = NodeSeq.fromSeq(ts.toList)

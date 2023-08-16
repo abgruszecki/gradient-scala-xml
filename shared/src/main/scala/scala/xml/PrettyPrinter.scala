@@ -103,7 +103,7 @@ class PrettyPrinter(width: Int, step: Int, minimizeEmpty: Boolean) {
   }
 
   protected def leafTag(n: Node): String = {
-    def mkLeaf(sb: StringBuilder): Unit = {
+    def mkLeaf(sb: StringBuilder^): Unit = {
       sb.append('<')
       n.nameToString(sb)
       n.attributes.buildString(sb)
@@ -114,7 +114,7 @@ class PrettyPrinter(width: Int, step: Int, minimizeEmpty: Boolean) {
 
   protected def startTag(n: Node, pscope: NamespaceBinding): (String, Int) = {
     var i: Int = 0
-    def mkStart(sb: StringBuilder): Unit = {
+    def mkStart(sb: StringBuilder^): Unit = {
       sb.append('<')
       n.nameToString(sb)
       i = sb.length + 1
@@ -126,7 +126,7 @@ class PrettyPrinter(width: Int, step: Int, minimizeEmpty: Boolean) {
   }
 
   protected def endTag(n: Node): String = {
-    def mkEnd(sb: StringBuilder): Unit = {
+    def mkEnd(sb: StringBuilder^): Unit = {
       sb.append("</")
       n.nameToString(sb)
       sb.append('>')
@@ -155,13 +155,15 @@ class PrettyPrinter(width: Int, step: Int, minimizeEmpty: Boolean) {
     case _: Atom[_] | _: Comment | _: EntityRef | _: ProcInstr =>
       makeBox(ind, node.toString.trim)
     case Group(xs) =>
-      traverse(xs.iterator, pscope, ind)
+      /*GRADIENT*/ val local = new Region()
+      traverse(xs.iterator(local), pscope, ind)
     case _ =>
       val test: String = {
-        val sb: StringBuilder = new StringBuilder()
+        /*GRADIENT*/ val local = new Region()
+        val sb: StringBuilder^{local} = local.new StringBuilder()
         Utility.serialize(node, pscope, sb, stripComments = false, minimizeTags = minimizeMode)
         if (doPreserve(node)) sb.toString
-        else TextBuffer.fromString(sb.toString).toText(0).data
+        else TextBuffer.fromString(local)(sb.toString).toText(0).data
       }
       if (childrenAreLeaves(node) && fits(test)) {
         makeBox(ind, test)
@@ -179,7 +181,7 @@ class PrettyPrinter(width: Int, step: Int, minimizeEmpty: Boolean) {
         if (stg.length < width - cur) { // start tag fits
           makeBox(ind, stg)
           makeBreak()
-          traverse(node.child.iterator, node.scope, ind + step)
+          traverse(node.child.iterator(/*GRADIENT*/new Region()), node.scope, ind + step)
           makeBox(ind, etg)
         } else if (len2 < width - cur) {
           // <start label + attrs + tag + content + end tag
@@ -187,7 +189,7 @@ class PrettyPrinter(width: Int, step: Int, minimizeEmpty: Boolean) {
           makeBreak() // todo: break the rest in pieces
           /*{ //@todo
              val sq:Seq[String] = stg.split(" ")
-             val it = sq.iterator
+             /*GRADIENT*/val it = sq.iterator
              it.next
              for (c <- it) {
                makeBox(ind+len2-2, c)
@@ -197,7 +199,7 @@ class PrettyPrinter(width: Int, step: Int, minimizeEmpty: Boolean) {
           makeBox(ind, stg.substring(len2, stg.length).trim)
           if (etg.nonEmpty) {
             makeBreak()
-            traverse(node.child.iterator, node.scope, ind + step)
+            traverse(node.child.iterator(/*GRADIENT*/new Region()), node.scope, ind + step)
             makeBox(cur, etg)
           }
           makeBreak()
@@ -208,7 +210,7 @@ class PrettyPrinter(width: Int, step: Int, minimizeEmpty: Boolean) {
       }
   }
 
-  protected def traverse(it: Iterator[Node], scope: NamespaceBinding, ind: Int): Unit =
+  protected def traverse(it: Iterator[Node]^, scope: NamespaceBinding, ind: Int): Unit =
     for (c <- it) {
       traverse(c, scope, ind)
       makeBreak()
@@ -221,11 +223,11 @@ class PrettyPrinter(width: Int, step: Int, minimizeEmpty: Boolean) {
    * @param n    the node to be serialized
    * @param sb   the stringbuffer to append to
    */
-  def format(n: Node, sb: StringBuilder): Unit = { // entry point
+  def format(n: Node, sb: StringBuilder^): Unit = { // entry point
     format(n, TopScope, sb)
   }
 
-  def format(n: Node, pscope: NamespaceBinding, sb: StringBuilder): Unit = { // entry point
+  def format(n: Node, pscope: NamespaceBinding, sb: StringBuilder^): Unit = { // entry point
     var lastwasbreak: Boolean = false
     reset()
     traverse(n, pscope, 0)
@@ -283,6 +285,6 @@ class PrettyPrinter(width: Int, step: Int, minimizeEmpty: Boolean) {
    *  @param pscope the namespace to prefix mapping
    *  @param sb     the string buffer to which to append to
    */
-  def formatNodes(nodes: Seq[Node], pscope: NamespaceBinding, sb: StringBuilder): Unit =
+  def formatNodes(nodes: Seq[Node], pscope: NamespaceBinding, sb: StringBuilder^): Unit =
     nodes.foreach(n => sb.append(format(n, pscope)))
 }

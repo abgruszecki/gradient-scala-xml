@@ -23,7 +23,7 @@ import Utility.SU
  *  All members should be accessed through those.
  */
 // Note: this is no longer true; Scala compiler uses its own copy since at least 2013.
-private[scala] trait MarkupParserCommon extends TokenTests {
+private[scala] trait MarkupParserCommon(/*GRADIENT*/reg: Reg^) extends TokenTests {
   protected def unreachable: Nothing = truncatedError("Cannot be reached.")
 
   // type HandleType       // MarkupHandler, SymbolicXMLBuilder
@@ -64,7 +64,8 @@ private[scala] trait MarkupParserCommon extends TokenTests {
    * @param endCh either `'` or `"`
    */
   def xAttributeValue(endCh: Char): String = {
-    val buf: StringBuilder = new StringBuilder
+    /*GRADIENT*/ val local = new Region()
+    val buf: StringBuilder^{local} = local.new StringBuilder
     while (ch != endCh && !eof) {
       // well-formedness constraint
       if (ch == '<') truncatedError("'<' not allowed in attrib value")
@@ -82,8 +83,9 @@ private[scala] trait MarkupParserCommon extends TokenTests {
     normalizeAttributeValue(str)
   }
 
-  private def takeUntilChar(it: Iterator[Char], end: Char): String = {
-    val buf: StringBuilder = new StringBuilder
+  private def takeUntilChar(it: Iterator[Char]^, end: Char): String = {
+    /*GRADIENT*/ val local = new Region()
+    val buf: StringBuilder^{local} = local.new StringBuilder
     while (it.hasNext) it.next() match {
       case `end` => return buf.toString
       case ch    => buf.append(ch)
@@ -118,7 +120,8 @@ private[scala] trait MarkupParserCommon extends TokenTests {
     else if (!isNameStart(ch))
       return errorAndResult(s"name expected, but char '$ch' cannot start a name", "")
 
-    val buf: StringBuilder = new StringBuilder
+    /*GRADIENT*/ val local = new Region()
+    val buf: StringBuilder^{local} = local.new StringBuilder
 
     while ({ buf.append(ch_returning_nextch)
     ; isNameChar(ch)}) ()
@@ -144,8 +147,9 @@ private[scala] trait MarkupParserCommon extends TokenTests {
    *  see spec 3.3.3
    */
   private def normalizeAttributeValue(attval: String): String = {
-    val buf: StringBuilder = new StringBuilder
-    val it: BufferedIterator[Char] = attval.iterator.buffered
+    /*GRADIENT*/ val local = new Region()
+    val buf: StringBuilder^{local} = local.new StringBuilder
+    val it: BufferedIterator[Char]^{local} = attval.iterator(local).buffered
 
     while (it.hasNext) buf.append(it.next() match {
       case ' ' | '\t' | '\n' | '\r' => " "
@@ -166,7 +170,7 @@ private[scala] trait MarkupParserCommon extends TokenTests {
   def xCharRef(ch: () => Char, nextch: () => Unit): String =
     Utility.parseCharRef(ch, nextch, reportSyntaxError, truncatedError)
 
-  def xCharRef(it: Iterator[Char]): String = {
+  def xCharRef(it: Iterator[Char]^): String = {
     var c: Char = it.next()
     Utility.parseCharRef(() => c, () => { c = it.next() }, reportSyntaxError, truncatedError)
   }
@@ -174,7 +178,7 @@ private[scala] trait MarkupParserCommon extends TokenTests {
   def xCharRef: String = xCharRef(() => ch, () => nextch())
 
   /** Create a lookahead reader which does not influence the input */
-  def lookahead(): BufferedIterator[Char]
+  def lookahead(): BufferedIterator[Char]^{reg,net,fs}
 
   /**
    * The library and compiler parsers had the interesting distinction of
@@ -241,7 +245,8 @@ private[scala] trait MarkupParserCommon extends TokenTests {
     positioner: () => PositionType,
     until: String): T =
     {
-      val sb: StringBuilder = new StringBuilder
+      /*GRADIENT*/ val local = new Region()
+      val sb: StringBuilder^{local} = local.new StringBuilder
       val head: Char = until.head
       val rest: String = until.tail
 
@@ -264,7 +269,7 @@ private[scala] trait MarkupParserCommon extends TokenTests {
    *  and leave input unchanged.
    */
   private def peek(lookingFor: String): Boolean =
-    lookahead().take(lookingFor.length).sameElements(lookingFor.iterator) && {
+    lookahead().take(lookingFor.length).sameElements(lookingFor.iterator(reg)) && {
       // drop the chars from the real reader (all lookahead + orig)
       0.to(lookingFor.length).foreach(_ => nextch())
       true

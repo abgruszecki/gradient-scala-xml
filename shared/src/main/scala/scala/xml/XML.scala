@@ -18,15 +18,15 @@ import java.io.{File, FileDescriptor, FileInputStream, FileOutputStream, InputSt
 import java.nio.channels.Channels
 import scala.util.control.Exception
 
-object Source {
-  def fromFile(name: String): InputSource = fromFile(new File(name))
-  def fromFile(file: File): InputSource = fromUrl(file.toURI.toURL)
-  def fromUrl(url: java.net.URL): InputSource = fromSysId(url.toString)
-  def fromSysId(sysID: String): InputSource = new InputSource(sysID)
-  def fromFile(fd: FileDescriptor): InputSource = fromInputStream(new FileInputStream(fd))
-  def fromInputStream(is: InputStream): InputSource = new InputSource(is)
-  def fromString(string: String): InputSource = fromReader(new StringReader(string))
-  def fromReader(reader: Reader): InputSource = new InputSource(reader)
+object Source^{fs} {
+  def fromFile(name: String)^{fs}: InputSource^# = fromFile(new File(name)(/*GRADIENT*/fs))
+  def fromFile(file: File^)^{}: InputSource^# = fromUrl(file.toURI.toURL)
+  def fromUrl(url: java.net.URL^)^{}: InputSource^# = fromSysId(url.toString)
+  def fromSysId(sysID: String)^{}: InputSource^# = enclose[{}] { #new InputSource(sysID) }
+  def fromFile(fd: FileDescriptor^)^{}: InputSource^# = fromInputStream(new FileInputStream(fd))
+  def fromInputStream(is: InputStream^)^{}: InputSource^# = enclose[{}] { #new InputSource(is) }
+  def fromString(string: String)^{}: InputSource^# = fromReader(new StringReader(string))
+  def fromReader(reader: Reader^)^{}: InputSource^# = enclose[{}] { #new InputSource(reader) }
 }
 
 /**
@@ -58,7 +58,7 @@ object MinimizeMode extends Enumeration {
  *
  *  @author  Burak Emir
  */
-object XML extends XMLLoader[Elem] {
+object XML^{fs} extends XMLLoader[Elem] {
   val xml: String = "xml"
   val xmlns: String = "xmlns"
   val namespace: String = "http://www.w3.org/XML/1998/namespace"
@@ -68,14 +68,20 @@ object XML extends XMLLoader[Elem] {
   val encoding: String = "UTF-8"
 
   /** Returns an XMLLoader whose load* methods will use the supplied SAXParser. */
-  def withSAXParser(p: SAXParser): XMLLoader[Elem] = new XMLLoader[Elem] {
-    override val parser: SAXParser = p
-  }
+  def withSAXParser(p: SAXParser^#)(
+    /*GRADIENT*/reg: Reg^
+  )^{}: XMLLoader[Elem]^# { val reg: package.reg.type } =
+    enclose[{}] { #new XMLLoader[Elem](reg) {
+      override val parser: SAXParser = p
+    }}
 
   /** Returns an XMLLoader whose load* methods will use the supplied XMLReader. */
-  def withXMLReader(r: XMLReader): XMLLoader[Elem] = new XMLLoader[Elem] {
-    override val reader: XMLReader = r
-  }
+  def withXMLReader(r: XMLReader^#)(
+    /*GRADIENT*/reg: Reg^
+  )^{}: XMLLoader[Elem]^# { val reg: package.reg.type } =
+    enclose[{}] { #new XMLLoader[Elem](reg) {
+      override val reader: XMLReader^# = r
+    }}
 
   /**
    * Saves a node to a file with given filename using given encoding
@@ -97,9 +103,9 @@ object XML extends XMLLoader[Elem] {
     enc: String = "UTF-8",
     xmlDecl: Boolean = false,
     doctype: dtd.DocType = null
-  ): Unit = {
-    val fos: FileOutputStream = new FileOutputStream(filename)
-    val w: Writer = Channels.newWriter(fos.getChannel, enc)
+  )^{fs}: Unit = {
+    val fos: FileOutputStream^{fs} = new FileOutputStream(filename)(/*GRADIENT*/fs)
+    val w: Writer^{fs} = Channels.newWriter(fos.getChannel, enc)
 
     Exception.ultimately(w.close())(
       write(w, node, enc, xmlDecl, doctype)
@@ -117,13 +123,13 @@ object XML extends XMLLoader[Elem] {
    *  @param doctype  if not null, write doctype declaration
    */
   final def write(
-    w: Writer,
+    w: Writer^,
     node: Node,
     enc: String,
     xmlDecl: Boolean,
     doctype: dtd.DocType,
     minimizeTags: MinimizeMode.Value = MinimizeMode.Default
-  ): Unit = {
+  )^{}: Unit = {
     /* TODO: optimize by giving writer parameter to toXML*/
     if (xmlDecl) w.write(s"<?xml version='1.0' encoding='$enc'?>\n")
     if (doctype.ne(null)) w.write(s"$doctype\n")

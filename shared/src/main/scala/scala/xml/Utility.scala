@@ -29,12 +29,13 @@ object Utility extends AnyRef with parsing.TokenTests {
 
   // [Martin] This looks dubious. We don't convert StringBuilders to
   // Strings anywhere else, why do it here?
-  implicit def implicitSbToString(sb: StringBuilder): String = sb.toString
+  implicit def implicitSbToString(sb: StringBuilder^): String = sb.toString
 
   // helper for the extremely oft-repeated sequence of creating a
   // StringBuilder, passing it around, and then grabbing its String.
-  private[xml] def sbToString(f: StringBuilder => Unit): String = {
-    val sb: StringBuilder = new StringBuilder
+  private[xml] def sbToString(f: StringBuilder^ => Unit): String = {
+    /*GRADIENT*/ val local = new Region()
+    val sb: StringBuilder^{local} = local.new StringBuilder
     f(sb)
     sb.toString
   }
@@ -71,7 +72,8 @@ object Utility extends AnyRef with parsing.TokenTests {
       val children: Seq[Node] = combineAdjacentTextNodes(child).flatMap(trimProper)
       Elem(pre, lab, md, scp, children.isEmpty, children: _*)
     case Text(s) =>
-      new TextBuffer().append(s).toText
+      /*GRADIENT*/ val local = new Region()
+      local.new TextBuffer().append(s).toText
     case _ =>
       x
   }
@@ -120,10 +122,11 @@ object Utility extends AnyRef with parsing.TokenTests {
   /**
    * Appends escaped string to `s`.
    */
-  final def escape(text: String, s: StringBuilder): StringBuilder = {
+  final def escape(text: String, s: StringBuilder^): StringBuilder^{s} = {
     // Implemented per XML spec:
     // http://www.w3.org/International/questions/qa-controls
-    text.iterator.foldLeft(s) { (s, c) =>
+    /*GRADIENT*/ val local = new Region()
+    text.iterator(local).foldLeft(s) { (s, c) =>
       escMap.get(c) match {
         case Some(str)                             => s ++= str
         case _ if c >= ' ' || "\n\r\t".contains(c) => s += c
@@ -138,20 +141,20 @@ object Utility extends AnyRef with parsing.TokenTests {
    *
    * @return    `'''null'''` if `ref` was not a predefined entity.
    */
-  final def unescape(ref: String, s: StringBuilder): StringBuilder =
+  final def unescape(ref: String, s: StringBuilder^): StringBuilder^{s} =
     unescMap.get(ref).map(s.append).orNull
 
   /**
    * Returns a set of all namespaces used in a sequence of nodes
    * and all their descendants, including the empty namespaces.
    */
-  def collectNamespaces(nodes: Seq[Node]): mutable.Set[String] =
-    nodes.foldLeft(new mutable.HashSet[String]) { (set, x) => collectNamespaces(x, set); set }
+  def collectNamespaces(nodes: Seq[Node])(/*GRADIENT*/reg: Reg^): mutable.Set[String] =
+    nodes.foldLeft(reg.new mutable.HashSet[String]) { (set, x) => collectNamespaces(x, set); set }
 
   /**
    * Adds all namespaces in node to set.
    */
-  def collectNamespaces(n: Node, set: mutable.Set[String]): Unit = {
+  def collectNamespaces(n: Node, set: mutable.Set[String]^): Unit = {
     if (n.doCollectNamespaces) {
       set += n.namespace
       for (a <- n.attributes) a match {
@@ -187,12 +190,12 @@ object Utility extends AnyRef with parsing.TokenTests {
   def toXML(
     x: Node,
     pscope: NamespaceBinding = TopScope,
-    sb: StringBuilder = new StringBuilder,
+    sb: StringBuilder^ = { /*GRADIENT*/ val local = new Region(); local.new StringBuilder },
     stripComments: Boolean = false,
     decodeEntities: Boolean = true,
     preserveWhitespace: Boolean = false,
     minimizeTags: Boolean = false
-  ): StringBuilder =
+  ): StringBuilder^{sb} =
     serialize(x, pscope, sb, stripComments, decodeEntities, preserveWhitespace, if (minimizeTags) MinimizeMode.Always else MinimizeMode.Never)
 
   /**
@@ -206,12 +209,12 @@ object Utility extends AnyRef with parsing.TokenTests {
   def serialize(
     x: Node,
     pscope: NamespaceBinding = TopScope,
-    sb: StringBuilder = new StringBuilder,
+    sb: StringBuilder^ = { /*GRADIENT*/ val local = new Region(); local.new StringBuilder },
     stripComments: Boolean = false,
     decodeEntities: Boolean = true,
     preserveWhitespace: Boolean = false,
     minimizeTags: MinimizeMode.Value = MinimizeMode.Default
-  ): StringBuilder = {
+  ): StringBuilder^{sb} = {
     serializeImpl(List(x), pscope, false, stripComments, minimizeTags, sb)
     sb
   }
@@ -222,7 +225,7 @@ object Utility extends AnyRef with parsing.TokenTests {
     spaced: Boolean,
     stripComments: Boolean,
     minimizeTags: MinimizeMode.Value,
-    sb: StringBuilder
+    sb: StringBuilder^
   ): Unit = {
     @tailrec def ser(nss: List[List[Node]], pscopes: List[NamespaceBinding], spaced: List[Boolean], toClose: List[Node]): Unit = nss match {
       case List(Nil) =>
@@ -274,7 +277,7 @@ object Utility extends AnyRef with parsing.TokenTests {
   def sequenceToXML(
     children: Seq[Node],
     pscope: NamespaceBinding = TopScope,
-    sb: StringBuilder = new StringBuilder,
+    sb: StringBuilder^ = { /*GRADIENT*/ val local = new Region(); local.new StringBuilder },
     stripComments: Boolean = false,
     decodeEntities: Boolean = true,
     preserveWhitespace: Boolean = false,
@@ -307,7 +310,7 @@ object Utility extends AnyRef with parsing.TokenTests {
    * Appends &quot;s&quot; if string `s` does not contain &quot;,
    * &apos;s&apos; otherwise.
    */
-  def appendQuoted(s: String, sb: StringBuilder): StringBuilder = {
+  def appendQuoted(s: String, sb: StringBuilder^): StringBuilder^{sb} = {
     val ch: Char = if (s.contains('"')) '\'' else '"'
     sb.append(s"$ch$s$ch")
   }
@@ -315,7 +318,7 @@ object Utility extends AnyRef with parsing.TokenTests {
   /**
    * Appends &quot;s&quot; and escapes and &quot; i s with \&quot;
    */
-  def appendEscapedQuoted(s: String, sb: StringBuilder): StringBuilder = {
+  def appendEscapedQuoted(s: String, sb: StringBuilder^): StringBuilder^{sb} = {
     sb.append('"')
     for (c <- s) c match {
       case '"' =>
@@ -358,12 +361,13 @@ object Utility extends AnyRef with parsing.TokenTests {
     null
   }
 
-  def parseAttributeValue(value: String): Seq[Node] = {
-    val sb: StringBuilder = new StringBuilder
-    var rfb: StringBuilder = null
-    val nb: NodeBuffer = new NodeBuffer()
+  def parseAttributeValue(value: String): Seq[Node]^ = {
+    /*GRADIENT*/ val local = new Region()
+    val sb: StringBuilder^{local} = local.new StringBuilder
+    var rfb: StringBuilder^{local} = null
+    val nb: NodeBuffer^{local} = local.new NodeBuffer()
 
-    val it: Iterator[Char] = value.iterator
+    val it: Iterator[Char]^{local} = value.iterator(local)
     while (it.hasNext) {
       var c: Char = it.next()
       // entity! flush buffer into text node
@@ -374,7 +378,7 @@ object Utility extends AnyRef with parsing.TokenTests {
           val theChar: String = parseCharRef ({ () => c }, { () => c = it.next() }, { s => throw new RuntimeException(s) }, { s => throw new RuntimeException(s) })
           sb.append(theChar)
         } else {
-          if (rfb.eq(null)) rfb = new StringBuilder()
+          if (rfb.eq(null)) rfb = local.new StringBuilder()
           rfb.append(c)
           c = it.next()
           while (c != ';') {

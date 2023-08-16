@@ -72,11 +72,11 @@ case class NamespaceBinding(prefix: String, uri: String, parent: NamespaceBindin
 
   def buildString(stop: NamespaceBinding): String = Utility.sbToString(buildString(_, stop))
 
-  def buildString(sb: StringBuilder, stop: NamespaceBinding): Unit = {
+  def buildString(sb: StringBuilder^, stop: NamespaceBinding): Unit = {
     shadowRedefined(stop).doBuildString(sb, stop)
   }
 
-  private def doBuildString(sb: StringBuilder, stop: NamespaceBinding): Unit = {
+  private def doBuildString(sb: StringBuilder^, stop: NamespaceBinding): Unit = {
     if (List(null, stop, TopScope).contains(this)) return
 
     val prefixStr: String = if (prefix != null) s":$prefix" else ""

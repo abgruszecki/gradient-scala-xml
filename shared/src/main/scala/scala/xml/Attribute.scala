@@ -81,9 +81,9 @@ trait Attribute extends MetaData {
   }
 
   /** Returns an iterator on attributes */
-  override def iterator: Iterator[MetaData] = {
-    if (value == null) next.iterator
-    else Iterator.single(this) ++ next.iterator
+  override def iterator(/*GRADIENT*/reg: Reg^): Iterator[MetaData]^{reg} = {
+    if (value == null) next.iterator(reg)
+    else Iterator.single(reg)(this) ++ next.iterator(reg)
   }
 
   override def size: Int = {
@@ -94,14 +94,15 @@ trait Attribute extends MetaData {
   /**
    * Appends string representation of only this attribute to stringbuffer.
    */
-  override protected def toString1(sb: StringBuilder): Unit = {
+  override protected def toString1(sb: StringBuilder^): Unit = {
     if (value == null)
       return
     if (isPrefixed)
       sb.append(s"$pre:")
 
     sb.append(s"$key=")
-    val sb2: StringBuilder = new StringBuilder()
+    /*GRADIENT*/ val local = new Region()
+    val sb2: StringBuilder^{local} = local.new StringBuilder()
     Utility.sequenceToXML(value, TopScope, sb2, stripComments = true)
     Utility.appendQuoted(sb2.toString, sb)
   }

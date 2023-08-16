@@ -72,8 +72,8 @@ class XIncludeFilter extends XMLFilterImpl {
 
   final val XINCLUDE_NAMESPACE: String = "http://www.w3.org/2001/XInclude"
 
-  private val bases: java.util.Stack[URL] = new java.util.Stack[URL]()
-  private val locators: java.util.Stack[Locator] = new java.util.Stack[Locator]()
+  private val bases: java.util.Stack[URL^{fs,net}]^# = #new java.util.Stack[URL^{fs,net}]()
+  private val locators: java.util.Stack[Locator^#]^# = #new java.util.Stack[Locator^#]()
 
   /*    private EntityResolver resolver;
 
@@ -88,11 +88,11 @@ class XIncludeFilter extends XMLFilterImpl {
   // what if this isn't called????
   // do I need to check this in startDocument() and push something
   // there????
-  override def setDocumentLocator(locator: Locator): Unit = {
+  override def setDocumentLocator(locator: Locator^#): Unit = {
     locators push locator
     val base: String = locator.getSystemId
     try {
-      bases.push(new URL(base))
+      bases.push(new URL(base)(/*GRADIENT*/fs, net))
     } catch {
       case _: MalformedURLException =>
         throw new UnsupportedOperationException(s"Unrecognized SYSTEM ID: $base")
@@ -122,11 +122,11 @@ class XIncludeFilter extends XMLFilterImpl {
       // Adjust bases stack by pushing either the new
       // value of xml:base or the base of the parent
       val base: String = atts.getValue(NamespaceSupport.XMLNS, "base")
-      val parentBase: URL = bases.peek()
-      var currentBase: URL = parentBase
+      val parentBase: URL^{fs,net} = bases.peek()
+      var currentBase: URL^{fs,net} = parentBase
       if (base != null) {
         try {
-          currentBase = new URL(parentBase, base)
+          currentBase = new URL(parentBase, base)(/*GRADIENT*/fs, net)
         } catch {
           case e: MalformedURLException =>
             throw new SAXException(s"Malformed base URL: $currentBase", e)
@@ -204,11 +204,11 @@ class XIncludeFilter extends XMLFilterImpl {
     if (level == 0) super.endPrefixMapping(prefix)
   }
 
-  override def characters(ch: Array[Char], start: Int, length: Int): Unit = {
+  override def characters(ch: Array[Char]^, start: Int, length: Int): Unit = {
     if (level == 0) super.characters(ch, start, length)
   }
 
-  override def ignorableWhitespace(ch: Array[Char], start: Int, length: Int): Unit = {
+  override def ignorableWhitespace(ch: Array[Char]^, start: Int, length: Int): Unit = {
     if (level == 0) super.ignorableWhitespace(ch, start, length)
   }
 
@@ -254,10 +254,10 @@ class XIncludeFilter extends XMLFilterImpl {
   private def includeTextDocument(url: String, encoding1: String): Unit = {
     var encoding: String = encoding1
     if (encoding == null || encoding.trim.equals("")) encoding = "UTF-8"
-    var source: URL = null
+    var source: URL^{fs,net} = null
     try {
-      val base: URL = bases.peek
-      source = new URL(base, url)
+      val base: URL^{fs,net} = bases.peek
+      source = new URL(base, url)(/*GRADIENT*/fs, net)
     } catch {
       case e: MalformedURLException =>
         val ex: UnavailableResourceException = new UnavailableResourceException(s"Unresolvable URL $url$getLocation")
@@ -266,8 +266,8 @@ class XIncludeFilter extends XMLFilterImpl {
     }
 
     try {
-      val uc: URLConnection = source.openConnection
-      val in: BufferedInputStream = new BufferedInputStream(uc.getInputStream)
+      val uc: URLConnection^{source} = source.openConnection
+      val in: BufferedInputStream^{source} = new BufferedInputStream(uc.getInputStream)
       val encodingFromHeader: String = uc.getContentEncoding
       var contentType: String = uc.getContentType
       if (encodingFromHeader != null)
@@ -287,7 +287,8 @@ class XIncludeFilter extends XMLFilterImpl {
         }
       }
       val reader: InputStreamReader = new InputStreamReader(in, encoding)
-      val c: Array[Char] = new Array[Char](1024)
+      /*GRADIENT*/ val local = new Region()
+      val c: Array[Char]^{local} = local.new Array[Char](1024)
       var charsRead: Int = 0 // bogus init value
       while ({ {
         charsRead = reader.read(c, 0, 1024)
@@ -314,8 +315,8 @@ class XIncludeFilter extends XMLFilterImpl {
    * be downloaded from the specified URL.
    */
   private def includeXMLDocument(url: String): Unit = {
-    val source: URL =
-      try new URL(bases.peek, url)
+    val source: URL^{fs,net} =
+      try new URL(bases.peek, url)(/*GRADIENT*/fs, net)
       catch {
         case e: MalformedURLException =>
           val ex: UnavailableResourceException = new UnavailableResourceException(s"Unresolvable URL $url$getLocation")
@@ -324,7 +325,7 @@ class XIncludeFilter extends XMLFilterImpl {
       }
 
     try {
-      val parser: XMLReader =
+      val parser: XMLReader^# =
         try XMLReaderFactory.createXMLReader()
         catch {
           case _: SAXException =>
@@ -333,7 +334,7 @@ class XIncludeFilter extends XMLFilterImpl {
         }
 
       parser setContentHandler this
-      val resolver: EntityResolver = this.getEntityResolver
+      val resolver: EntityResolver^# = this.getEntityResolver
       if (resolver != null)
         parser setEntityResolver resolver
 

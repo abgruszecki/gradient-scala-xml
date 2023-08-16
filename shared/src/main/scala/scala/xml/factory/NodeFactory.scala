@@ -16,12 +16,12 @@ package factory
 
 import scala.collection.Seq
 
-trait NodeFactory[A <: Node] {
+trait NodeFactory[A <: Node](/*GRADIENT*/reg: Reg^) {
   val ignoreComments: Boolean = false
   val ignoreProcInstr: Boolean = false
 
   /* default behaviour is to use hash-consing */
-  val cache: scala.collection.mutable.HashMap[Int, List[A]] = new scala.collection.mutable.HashMap[Int, List[A]]
+  val cache: scala.collection.mutable.HashMap[Int, List[A]]^{reg} = reg.new scala.collection.mutable.HashMap[Int, List[A]]
 
   protected def create(pre: String, name: String, attrs: MetaData, scope: NamespaceBinding, children: Seq[Node]): A
 

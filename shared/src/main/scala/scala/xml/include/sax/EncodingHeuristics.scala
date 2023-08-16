@@ -74,7 +74,8 @@ object EncodingHeuristics {
       return resetAndRet
 
     def readASCIIEncoding: String = {
-      val data: Array[Byte] = new Array[Byte](bytesToRead - 4)
+      /*GRADIENT*/val local = new Region()
+      val data: Array[Byte]^ = local.new Array[Byte](bytesToRead - 4)
       val length: Int = in.read(data, 0, bytesToRead - 4)
 
       // Use Latin-1 (ISO-8859-1) because all byte sequences are legal.
