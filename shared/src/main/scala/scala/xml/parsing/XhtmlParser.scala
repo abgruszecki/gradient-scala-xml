@@ -22,7 +22,7 @@ import scala.io.Source
  *
  *  @author (c) David Pollak, 2007 WorldWide Conferencing, LLC.
  */
-class XhtmlParser(override val input: Source) extends ConstructingHandler with MarkupParser with ExternalSources {
+class XhtmlParser(/*GRADIENT*/acc: Acc^, override val input: Source) extends ConstructingHandler(acc) with MarkupParser(acc) with ExternalSources {
   override val preserveWS: Boolean = true
   ent ++= XhtmlEntities()
 }
@@ -33,5 +33,5 @@ class XhtmlParser(override val input: Source) extends ConstructingHandler with M
  *  @author Burak Emir
  */
 object XhtmlParser {
-  def apply(source: Source): NodeSeq = new XhtmlParser(source).initialize.document()
+  def apply(source: Source): NodeSeq = new XhtmlParser(/*GRADIENT*/package.acc, source).initialize.document()
 }

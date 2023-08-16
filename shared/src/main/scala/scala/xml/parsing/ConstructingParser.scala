@@ -18,11 +18,11 @@ import java.io.File
 import scala.io.Source
 
 object ConstructingParser {
-  def fromFile(inp: File, preserveWS: Boolean): ConstructingParser =
-    new ConstructingParser(Source.fromFile(inp), preserveWS).initialize
+  def fromFile(/*GRADIENT*/ acc: Acc^, inp: File^, preserveWS: Boolean): ConstructingParser^{inp} =
+    new ConstructingParser(acc, Source.fromFile(inp), preserveWS).initialize
 
-  def fromSource(inp: Source, preserveWS: Boolean): ConstructingParser =
-    new ConstructingParser(inp, preserveWS).initialize
+  def fromSource(/*GRADIENT*/ acc: Acc^, inp: Source^, preserveWS: Boolean): ConstructingParser^{inp} =
+    new ConstructingParser(acc, inp, preserveWS).initialize
 }
 
 /**
@@ -49,7 +49,7 @@ object ConstructingParser {
  * }
  * }}}
  */
-class ConstructingParser(override val input: Source, override val preserveWS: Boolean)
-  extends ConstructingHandler
+class ConstructingParser(/*GRADIENT*/acc: Acc^, override val input: Source^, override val preserveWS: Boolean)
+  extends ConstructingHandler(acc)
   with ExternalSources
-  with MarkupParser
+  with MarkupParser(acc)

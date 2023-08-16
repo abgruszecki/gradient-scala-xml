@@ -24,9 +24,9 @@ import java.io.{ OutputStream, OutputStreamWriter, IOException }
  *
  * Based on Eliotte Rusty Harold's SAXXIncluder.
  */
-class XIncluder(outs: OutputStream, encoding: String) extends ContentHandler with LexicalHandler {
+class XIncluder(outs: OutputStream^, encoding: String) extends ContentHandler with LexicalHandler {
 
-  var out: OutputStreamWriter = new OutputStreamWriter(outs, encoding)
+  var out: OutputStreamWriter^{outs} = new OutputStreamWriter(outs, encoding)
 
   override def setDocumentLocator(locator: Locator): Unit = ()
 
@@ -82,7 +82,7 @@ class XIncluder(outs: OutputStream, encoding: String) extends ContentHandler wit
 
   // need to escape characters that are not in the given
   // encoding using character references????
-  override def characters(ch: Array[Char], start: Int, length: Int): Unit = {
+  override def characters(ch: Array[Char]^, start: Int, length: Int): Unit = {
     try {
       var i: Int = 0
       while (i < length) {
@@ -102,7 +102,7 @@ class XIncluder(outs: OutputStream, encoding: String) extends ContentHandler wit
     }
   }
 
-  override def ignorableWhitespace(ch: Array[Char], start: Int, length: Int): Unit = {
+  override def ignorableWhitespace(ch: Array[Char]^, start: Int, length: Int): Unit = {
     this.characters(ch, start, length)
   }
 
@@ -159,13 +159,13 @@ class XIncluder(outs: OutputStream, encoding: String) extends ContentHandler wit
 
   // Just need this reference so we can ask if a comment is
   // inside an include element or not
-  private var filter: XIncludeFilter = _
+  private var filter: XIncludeFilter^# = _
 
-  def setFilter(filter: XIncludeFilter): Unit = {
+  def setFilter(filter: XIncludeFilter^#): Unit = {
     this.filter = filter
   }
 
-  override def comment(ch: Array[Char], start: Int, length: Int): Unit = {
+  override def comment(ch: Array[Char]^, start: Int, length: Int): Unit = {
     if (!inDTD && !filter.insideIncludeElement) {
       try {
         out.write("<!--")

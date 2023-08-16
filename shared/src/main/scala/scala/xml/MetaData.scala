@@ -213,11 +213,11 @@ abstract class MetaData
   protected def toString1: String = sbToString(toString1)
 
   // appends string representations of single attribute to StringBuilder
-  protected def toString1(sb: StringBuilder): Unit
+  protected def toString1(sb: StringBuilder^): Unit
 
   override def toString: String = sbToString(buildString)
 
-  def buildString(sb: StringBuilder): StringBuilder = {
+  def buildString(sb: StringBuilder^): StringBuilder^{sb} = {
     sb.append(' ')
     toString1(sb)
     next.buildString(sb)

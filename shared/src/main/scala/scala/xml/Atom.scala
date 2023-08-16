@@ -47,7 +47,7 @@ class Atom[+A](val data: A) extends SpecialNode with Serializable {
    * Returns text, with some characters escaped according to the XML
    *  specification.
    */
-  override def buildString(sb: StringBuilder): StringBuilder =
+  override def buildString(sb: StringBuilder^): StringBuilder^ =
     Utility.escape(data.toString, sb)
 
   override def text: String = data.toString

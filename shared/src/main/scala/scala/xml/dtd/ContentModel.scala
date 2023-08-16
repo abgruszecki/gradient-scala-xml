@@ -58,7 +58,7 @@ object ContentModel extends WordExp {
   def buildString(r: RegExp): String = sbToString(buildString(r, _))
 
   /* precond: rs.length >= 1 */
-  private def buildString(rs: Seq[RegExp], sb: StringBuilder, sep: Char): Unit = {
+  private def buildString(rs: Seq[RegExp], sb: StringBuilder^, sep: Char): Unit = {
     buildString(rs.head, sb)
     for (z <- rs.tail) {
       sb.append(sep)
@@ -66,14 +66,14 @@ object ContentModel extends WordExp {
     }
   }
 
-  def buildString(c: ContentModel, sb: StringBuilder): StringBuilder = c match {
+  def buildString(c: ContentModel, sb: StringBuilder^): StringBuilder^{sb} = c match {
     case ANY                    => sb.append("ANY")
     case EMPTY                  => sb.append("EMPTY")
     case PCDATA                 => sb.append("(#PCDATA)")
     case ELEMENTS(_) | MIXED(_) => c.buildString(sb)
   }
 
-  def buildString(r: RegExp, sb: StringBuilder): StringBuilder =
+  def buildString(r: RegExp, sb: StringBuilder^): StringBuilder^{sb} =
     r match { // !!! check for match translation problem
       case Eps =>
         sb
@@ -90,19 +90,19 @@ object ContentModel extends WordExp {
 
 sealed abstract class ContentModel {
   override def toString: String = sbToString(buildString)
-  def buildString(sb: StringBuilder): StringBuilder
+  def buildString(sb: StringBuilder^): StringBuilder^{sb}
 }
 
 import ContentModel.RegExp
 
 case object PCDATA extends ContentModel {
-  override def buildString(sb: StringBuilder): StringBuilder = sb.append("(#PCDATA)")
+  override def buildString(sb: StringBuilder^): StringBuilder^{sb} = sb.append("(#PCDATA)")
 }
 case object EMPTY extends ContentModel {
-  override def buildString(sb: StringBuilder): StringBuilder = sb.append("EMPTY")
+  override def buildString(sb: StringBuilder^): StringBuilder^{sb} = sb.append("EMPTY")
 }
 case object ANY extends ContentModel {
-  override def buildString(sb: StringBuilder): StringBuilder = sb.append("ANY")
+  override def buildString(sb: StringBuilder^): StringBuilder^{sb} = sb.append("ANY")
 }
 sealed abstract class DFAContentModel extends ContentModel {
   /*GRADIENT*///import ContentModel.{ElemName, Translator}
@@ -118,7 +118,7 @@ sealed abstract class DFAContentModel extends ContentModel {
 case class MIXED(override val r: RegExp) extends DFAContentModel {
   import ContentModel.Alt
 
-  override def buildString(sb: StringBuilder): StringBuilder = {
+  override def buildString(sb: StringBuilder^): StringBuilder^{sb} = {
     val newAlt: Alt = r match { case Alt(rs@_*) => Alt(rs.drop(1): _*) }
 
     sb.append("(#PCDATA|")
@@ -128,6 +128,6 @@ case class MIXED(override val r: RegExp) extends DFAContentModel {
 }
 
 case class ELEMENTS(override val r: RegExp) extends DFAContentModel {
-  override def buildString(sb: StringBuilder): StringBuilder =
+  override def buildString(sb: StringBuilder^): StringBuilder^{sb} =
     ContentModel.buildString(r, sb)
 }

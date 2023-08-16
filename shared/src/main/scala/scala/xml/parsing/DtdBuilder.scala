@@ -18,6 +18,7 @@ import scala.xml.dtd._
 
 // Note: this is private to avoid it becoming a part of binary compatibility checks
 final private[parsing] class DtdBuilder(
+  /*GRADIENT*/acc: Acc^,
   name: String,
   externalID: ExternalID
 ) {
@@ -46,7 +47,7 @@ final private[parsing] class DtdBuilder(
     done = true
   }
 
-  def dtd: DTD = new DTD {
+  def dtd: DTD^{acc} { val acc: self.acc.type } = acc.new DTD {
     // Note: weirdly, unlike DocType, DTD does not have a 'name'...
     this.externalID = DtdBuilder.this.externalID
     this.elem ++= elements.map(d => d.name -> d).toMap
@@ -178,7 +179,8 @@ private[parsing] object DtdBuilder {
     name: String,
     publicId: String,
     systemId: String
-  ): DtdBuilder = new DtdBuilder(
+  )(/*GRADIENT*/ acc: Acc^): DtdBuilder = new DtdBuilder(
+    /*GRADIENT*/ acc,
     name,
     mkExternalID(publicId, systemId)
   )
